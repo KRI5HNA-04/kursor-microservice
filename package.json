@@ -1,4 +1,12 @@
 {
+  "name": "kursor-monorepo",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd kursor-editor && npm install && npm run build",
+    "start": "node server.js",
+    "dev": "cd kursor-editor && npm run dev",
+    "install-frontend": "cd kursor-editor && npm install"
+  },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",

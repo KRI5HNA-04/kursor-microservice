@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd kursor-editor && npm run build",
+  "outputDirectory": "kursor-editor/.next",
+  "installCommand": "cd kursor-editor && npm install",
+  "devCommand": "cd kursor-editor && npm run dev",
+  "framework": "nextjs"
+}
