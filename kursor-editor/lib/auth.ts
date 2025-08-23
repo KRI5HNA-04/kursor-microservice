@@ -21,50 +21,7 @@ export const authOptions: NextAuthOptions = {
       // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url
       return baseUrl
-    }
-  },
-  
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code"
-        }
-      }
-    }),
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        if (!user || !user.password) return null;
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
-        let image = user.image;
-        if (image && image.length > 300) {
-          image =
-            "https://ui-avatars.com/api/?format=png&name=" +
-            encodeURIComponent(user.name || "User");
-        }
-        return { id: user.id, name: user.name, email: user.email, image } as any;
-      },
-    }),
-  ],
-  session: {
-    strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60,
-    updateAge: 24 * 60 * 60,
-  },
-  pages: { signIn: "/login", error: "/login" },
-  callbacks: {
+    },
     async signIn({ account, profile }) {
       if (account?.provider === "google") {
         if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -112,6 +69,47 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+  
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
+    }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
+        if (!user || !user.password) return null;
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) return null;
+        let image = user.image;
+        if (image && image.length > 300) {
+          image =
+            "https://ui-avatars.com/api/?format=png&name=" +
+            encodeURIComponent(user.name || "User");
+        }
+        return { id: user.id, name: user.name, email: user.email, image } as any;
+      },
+    }),
+  ],
+  session: {
+    strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
+  },
+  pages: { signIn: "/login", error: "/login" },
   // Enable verbose logs when NEXTAUTH_DEBUG=true (useful on Vercel)
   debug: process.env.NEXTAUTH_DEBUG === "true",
 };
