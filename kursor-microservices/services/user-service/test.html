@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Service Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .result {
+        background: #f5f5f5;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 3px;
+        font-family: monospace;
+        white-space: pre-wrap;
+      }
+      button {
+        padding: 10px 15px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      input {
+        padding: 8px;
+        margin: 5px;
+        width: 200px;
+      }
+      .success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+      .auth-section {
+        background-color: #e7f3ff;
+        padding: 15px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 User Service Test Dashboard</h1>
+
+      <div class="test-section">
+        <h3>Service Status</h3>
+        <button onclick="testHealth()">Check Health</button>
+        <button onclick="testInfo()">Get Service Info</button>
+        <div id="health-result" class="result"></div>
+      </div>
+
+      <div class="test-section auth-section">
+        <h3>Authentication</h3>
+        <div>
+          <h4>Register New User</h4>
+          <input
+            type="text"
+            id="signupName"
+            placeholder="Full Name"
+            value="Test User"
+          />
+          <input type="email" id="signupEmail" placeholder="Email" value="" />
+          <input
+            type="password"
+            id="signupPassword"
+            placeholder="Password"
+            value="password123"
+          />
+          <button onclick="registerUser()">Register</button>
+        </div>
+        <div>
+          <h4>Login Existing User</h4>
+          <input type="email" id="loginEmail" placeholder="Email" value="" />
+          <input
+            type="password"
+            id="loginPassword"
+            placeholder="Password"
+            value="password123"
+          />
+          <button onclick="loginUser()">Login</button>
+        </div>
+        <div id="auth-result" class="result"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>Profile Operations</h3>
+        <button onclick="getProfile()">Get Profile</button>
+        <button onclick="updateProfile()">Update Profile</button>
+        <button onclick="searchUsers()">Search Users</button>
+        <div id="profile-result" class="result"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>Current Auth Token</h3>
+        <textarea
+          id="authToken"
+          rows="3"
+          style="width: 100%; font-family: monospace"
+          placeholder="JWT token will appear here after login/registration"
+        ></textarea>
+        <button onclick="validateToken()">Validate Token</button>
+      </div>
+    </div>
+
+    <script>
+      const BASE_URL = "http://localhost:3004";
+      let currentToken = null;
+
+      function displayResult(elementId, data, type = "success") {
+        const element = document.getElementById(elementId);
+        element.textContent =
+          typeof data === "object" ? JSON.stringify(data, null, 2) : data;
+        element.className = `result ${type}`;
+      }
+
+      function updateAuthToken(token) {
+        currentToken = token;
+        document.getElementById("authToken").value = token || "";
+      }
+
+      async function testHealth() {
+        try {
+          const response = await fetch(`${BASE_URL}/health`);
+          const data = await response.json();
+          displayResult("health-result", data, "success");
+        } catch (error) {
+          displayResult("health-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function testInfo() {
+        try {
+          const response = await fetch(`${BASE_URL}/info`);
+          const data = await response.json();
+          displayResult("health-result", data, "success");
+        } catch (error) {
+          displayResult("health-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function registerUser() {
+        const name = document.getElementById("signupName").value;
+        const email = document.getElementById("signupEmail").value;
+        const password = document.getElementById("signupPassword").value;
+
+        if (!email) {
+          document.getElementById(
+            "signupEmail"
+          ).value = `test${Date.now()}@example.com`;
+          setTimeout(registerUser, 100);
+          return;
+        }
+
+        try {
+          const response = await fetch(`${BASE_URL}/auth/signup`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name, email, password }),
+          });
+
+          const data = await response.json();
+          displayResult("auth-result", data, response.ok ? "success" : "error");
+
+          if (response.ok && data.token) {
+            updateAuthToken(data.token);
+            document.getElementById("loginEmail").value = email;
+          }
+        } catch (error) {
+          displayResult("auth-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function loginUser() {
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
+
+        try {
+          const response = await fetch(`${BASE_URL}/auth/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+          displayResult("auth-result", data, response.ok ? "success" : "error");
+
+          if (response.ok && data.token) {
+            updateAuthToken(data.token);
+          }
+        } catch (error) {
+          displayResult("auth-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function validateToken() {
+        const token =
+          document.getElementById("authToken").value || currentToken;
+
+        if (!token) {
+          displayResult("profile-result", "No token to validate", "error");
+          return;
+        }
+
+        try {
+          const response = await fetch(`${BASE_URL}/auth/validate`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token }),
+          });
+
+          const data = await response.json();
+          displayResult(
+            "profile-result",
+            data,
+            response.ok ? "success" : "error"
+          );
+        } catch (error) {
+          displayResult("profile-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function getProfile() {
+        const token =
+          document.getElementById("authToken").value || currentToken;
+
+        if (!token) {
+          displayResult(
+            "profile-result",
+            "Please login first to get a token",
+            "error"
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch(`${BASE_URL}/profile`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+          displayResult(
+            "profile-result",
+            data,
+            response.ok ? "success" : "error"
+          );
+        } catch (error) {
+          displayResult("profile-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function updateProfile() {
+        const token =
+          document.getElementById("authToken").value || currentToken;
+
+        if (!token) {
+          displayResult(
+            "profile-result",
+            "Please login first to get a token",
+            "error"
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch(`${BASE_URL}/profile`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              bio: `Updated bio from test - ${new Date().toLocaleTimeString()}`,
+              githubUrl: "https://github.com/testuser",
+              linkedinUrl: "https://linkedin.com/in/testuser",
+            }),
+          });
+
+          const data = await response.json();
+          displayResult(
+            "profile-result",
+            data,
+            response.ok ? "success" : "error"
+          );
+        } catch (error) {
+          displayResult("profile-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function searchUsers() {
+        const token =
+          document.getElementById("authToken").value || currentToken;
+
+        if (!token) {
+          displayResult(
+            "profile-result",
+            "Please login first to get a token",
+            "error"
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${BASE_URL}/users?search=test&limit=5`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+          displayResult(
+            "profile-result",
+            data,
+            response.ok ? "success" : "error"
+          );
+        } catch (error) {
+          displayResult("profile-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      // Test health on page load
+      testHealth();
+    </script>
+  </body>
+</html>

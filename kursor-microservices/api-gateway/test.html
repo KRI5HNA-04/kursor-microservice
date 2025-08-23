@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Gateway Test Console</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: white;
+      }
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        margin: 20px 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header h1 {
+        color: #fff;
+        margin: 0;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .section {
+        margin: 25px 0;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        border-left: 4px solid #00ff88;
+      }
+      .section h3 {
+        color: #00ff88;
+        margin-top: 0;
+        font-size: 1.4em;
+      }
+      .form-group {
+        margin: 15px 0;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #e0e0e0;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        font-size: 14px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        backdrop-filter: blur(5px);
+      }
+      input::placeholder,
+      textarea::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+      button {
+        background: linear-gradient(135deg, #00ff88, #00cc6a);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+      }
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+      }
+      .response {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        white-space: pre-wrap;
+        font-family: "Courier New", monospace;
+        color: #00ff88;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+      .status-online {
+        background-color: #00ff88;
+      }
+      .status-offline {
+        background-color: #ff4757;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      .token-display {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        border-radius: 6px;
+        margin: 10px 0;
+        word-break: break-all;
+        font-family: monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🌐 API Gateway Test Console</h1>
+      <p>Unified testing interface for all microservices</p>
+    </div>
+
+    <!-- Gateway Health Check -->
+    <div class="container">
+      <div class="section">
+        <h3>🏥 Gateway Health & Service Discovery</h3>
+        <button onclick="checkGatewayHealth()">Check Gateway Health</button>
+        <button onclick="checkServiceDiscovery()">Service Discovery</button>
+        <button onclick="checkDashboard()">View Dashboard</button>
+        <div id="gateway-response" class="response"></div>
+      </div>
+    </div>
+
+    <!-- Authentication Section -->
+    <div class="container">
+      <div class="section">
+        <h3>🔐 Authentication Service (via Gateway)</h3>
+        <div class="grid">
+          <div>
+            <h4>User Registration</h4>
+            <div class="form-group">
+              <label>Username:</label>
+              <input
+                type="text"
+                id="reg-username"
+                placeholder="Enter username"
+              />
+            </div>
+            <div class="form-group">
+              <label>Email:</label>
+              <input type="email" id="reg-email" placeholder="Enter email" />
+            </div>
+            <div class="form-group">
+              <label>Password:</label>
+              <input
+                type="password"
+                id="reg-password"
+                placeholder="Enter password"
+              />
+            </div>
+            <button onclick="registerUser()">Register User</button>
+          </div>
+          <div>
+            <h4>User Login</h4>
+            <div class="form-group">
+              <label>Email:</label>
+              <input type="email" id="login-email" placeholder="Enter email" />
+            </div>
+            <div class="form-group">
+              <label>Password:</label>
+              <input
+                type="password"
+                id="login-password"
+                placeholder="Enter password"
+              />
+            </div>
+            <button onclick="loginUser()">Login</button>
+            <button onclick="getProfile()">Get Profile</button>
+          </div>
+        </div>
+        <div class="token-display" id="auth-token" style="display: none">
+          <strong>Current Token:</strong> <span id="token-value"></span>
+        </div>
+        <div id="auth-response" class="response"></div>
+      </div>
+    </div>
+
+    <!-- Code Execution Section -->
+    <div class="container">
+      <div class="section">
+        <h3>⚡ Code Execution Service (via Gateway)</h3>
+        <div class="form-group">
+          <label>Programming Language:</label>
+          <select id="exec-language">
+            <option value="javascript">JavaScript (Node.js)</option>
+            <option value="python">Python</option>
+            <option value="java">Java</option>
+            <option value="cpp">C++</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Source Code:</label>
+          <textarea
+            id="exec-code"
+            rows="8"
+            placeholder="Enter your code here..."
+          >
+console.log("Hello from API Gateway!");</textarea
+          >
+        </div>
+        <button onclick="executeCode()">Execute Code</button>
+        <div id="exec-response" class="response"></div>
+      </div>
+    </div>
+
+    <!-- Snippet Management Section -->
+    <div class="container">
+      <div class="section">
+        <h3>📄 Snippet Management (via Gateway)</h3>
+        <div class="grid">
+          <div>
+            <h4>Create Snippet</h4>
+            <div class="form-group">
+              <label>Title:</label>
+              <input
+                type="text"
+                id="snippet-title"
+                placeholder="Snippet title"
+              />
+            </div>
+            <div class="form-group">
+              <label>Language:</label>
+              <input
+                type="text"
+                id="snippet-language"
+                placeholder="Programming language"
+              />
+            </div>
+            <div class="form-group">
+              <label>Code:</label>
+              <textarea
+                id="snippet-code"
+                rows="6"
+                placeholder="Snippet code..."
+              ></textarea>
+            </div>
+            <button onclick="createSnippet()">Create Snippet</button>
+          </div>
+          <div>
+            <h4>Snippet Operations</h4>
+            <div class="form-group">
+              <label>Snippet ID (for operations):</label>
+              <input
+                type="text"
+                id="snippet-id"
+                placeholder="Enter snippet ID"
+              />
+            </div>
+            <button onclick="getAllSnippets()">Get All Snippets</button>
+            <button onclick="getSnippetById()">Get by ID</button>
+            <button onclick="deleteSnippet()">Delete Snippet</button>
+          </div>
+        </div>
+        <div id="snippet-response" class="response"></div>
+      </div>
+    </div>
+
+    <!-- Communication Section -->
+    <div class="container">
+      <div class="section">
+        <h3>📧 Communication Service (via Gateway)</h3>
+        <div class="form-group">
+          <label>From Name:</label>
+          <input type="text" id="contact-name" placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label>From Email:</label>
+          <input type="email" id="contact-email" placeholder="Your email" />
+        </div>
+        <div class="form-group">
+          <label>Subject:</label>
+          <input type="text" id="contact-subject" placeholder="Email subject" />
+        </div>
+        <div class="form-group">
+          <label>Message:</label>
+          <textarea
+            id="contact-message"
+            rows="5"
+            placeholder="Your message..."
+          ></textarea>
+        </div>
+        <button onclick="sendContactEmail()">Send Contact Email</button>
+        <div id="contact-response" class="response"></div>
+      </div>
+    </div>
+
+    <script>
+      let authToken = null;
+      const GATEWAY_URL = "http://localhost:3000";
+
+      // Helper function to make requests
+      async function makeRequest(endpoint, options = {}) {
+        const headers = {
+          "Content-Type": "application/json",
+          ...options.headers,
+        };
+
+        if (authToken && !options.skipAuth) {
+          headers["Authorization"] = `Bearer ${authToken}`;
+        }
+
+        const response = await fetch(`${GATEWAY_URL}${endpoint}`, {
+          ...options,
+          headers,
+        });
+
+        return response;
+      }
+
+      // Gateway Health Checks
+      async function checkGatewayHealth() {
+        try {
+          const response = await fetch(`${GATEWAY_URL}/health`);
+          const data = await response.json();
+          document.getElementById("gateway-response").textContent = `Status: ${
+            response.status
+          }\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "gateway-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      async function checkServiceDiscovery() {
+        try {
+          const response = await fetch(`${GATEWAY_URL}/services`);
+          const data = await response.json();
+          document.getElementById(
+            "gateway-response"
+          ).textContent = `Service Discovery:\n${JSON.stringify(
+            data,
+            null,
+            2
+          )}`;
+        } catch (error) {
+          document.getElementById(
+            "gateway-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      async function checkDashboard() {
+        try {
+          const response = await fetch(`${GATEWAY_URL}/dashboard`);
+          const data = await response.json();
+          document.getElementById(
+            "gateway-response"
+          ).textContent = `Dashboard Data:\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "gateway-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      // Authentication Functions
+      async function registerUser() {
+        try {
+          const response = await makeRequest("/auth/register", {
+            method: "POST",
+            skipAuth: true,
+            body: JSON.stringify({
+              username: document.getElementById("reg-username").value,
+              email: document.getElementById("reg-email").value,
+              password: document.getElementById("reg-password").value,
+            }),
+          });
+
+          const data = await response.json();
+          document.getElementById(
+            "auth-response"
+          ).textContent = `Registration Response: ${
+            response.status
+          }\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "auth-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      async function loginUser() {
+        try {
+          const response = await makeRequest("/auth/login", {
+            method: "POST",
+            skipAuth: true,
+            body: JSON.stringify({
+              email: document.getElementById("login-email").value,
+              password: document.getElementById("login-password").value,
+            }),
+          });
+
+          const data = await response.json();
+          if (data.token) {
+            authToken = data.token;
+            document.getElementById("auth-token").style.display = "block";
+            document.getElementById("token-value").textContent = authToken;
+          }
+          document.getElementById(
+            "auth-response"
+          ).textContent = `Login Response: ${response.status}\n${JSON.stringify(
+            data,
+            null,
+            2
+          )}`;
+        } catch (error) {
+          document.getElementById(
+            "auth-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      async function getProfile() {
+        if (!authToken) {
+          document.getElementById("auth-response").textContent =
+            "Please login first to get profile";
+          return;
+        }
+
+        try {
+          const response = await makeRequest("/auth/profile");
+          const data = await response.json();
+          document.getElementById(
+            "auth-response"
+          ).textContent = `Profile Response: ${
+            response.status
+          }\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "auth-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      // Code Execution Functions
+      async function executeCode() {
+        try {
+          const response = await makeRequest("/execute", {
+            method: "POST",
+            body: JSON.stringify({
+              language: document.getElementById("exec-language").value,
+              code: document.getElementById("exec-code").value,
+            }),
+          });
+
+          const data = await response.json();
+          document.getElementById(
+            "exec-response"
+          ).textContent = `Execution Response: ${
+            response.status
+          }\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "exec-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      // Snippet Management Functions
+      async function createSnippet() {
+        if (!authToken) {
+          document.getElementById("snippet-response").textContent =
+            "Please login first to manage snippets";
+          return;
+        }
+
+        try {
+          const response = await makeRequest("/snippets", {
+            method: "POST",
+            body: JSON.stringify({
+              title: document.getElementById("snippet-title").value,
+              language: document.getElementById("snippet-language").value,
+              code: document.getElementById("snippet-code").value,
+            }),
+          });
+
+          const data = await response.json();
+          document.getElementById(
+            "snippet-response"
+          ).textContent = `Create Response: ${
+            response.status
+          }\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "snippet-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      async function getAllSnippets() {
+        try {
+          const response = await makeRequest("/snippets");
+          const data = await response.json();
+          document.getElementById(
+            "snippet-response"
+          ).textContent = `All Snippets: ${response.status}\n${JSON.stringify(
+            data,
+            null,
+            2
+          )}`;
+        } catch (error) {
+          document.getElementById(
+            "snippet-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      async function getSnippetById() {
+        const id = document.getElementById("snippet-id").value;
+        if (!id) {
+          document.getElementById("snippet-response").textContent =
+            "Please enter a snippet ID";
+          return;
+        }
+
+        try {
+          const response = await makeRequest(`/snippets/${id}`);
+          const data = await response.json();
+          document.getElementById(
+            "snippet-response"
+          ).textContent = `Snippet Details: ${
+            response.status
+          }\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "snippet-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      async function deleteSnippet() {
+        const id = document.getElementById("snippet-id").value;
+        if (!id) {
+          document.getElementById("snippet-response").textContent =
+            "Please enter a snippet ID";
+          return;
+        }
+
+        if (!authToken) {
+          document.getElementById("snippet-response").textContent =
+            "Please login first to delete snippets";
+          return;
+        }
+
+        try {
+          const response = await makeRequest(`/snippets/${id}`, {
+            method: "DELETE",
+          });
+
+          const data = await response.json();
+          document.getElementById(
+            "snippet-response"
+          ).textContent = `Delete Response: ${
+            response.status
+          }\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "snippet-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      // Communication Functions
+      async function sendContactEmail() {
+        try {
+          const response = await makeRequest("/contact", {
+            method: "POST",
+            body: JSON.stringify({
+              name: document.getElementById("contact-name").value,
+              email: document.getElementById("contact-email").value,
+              subject: document.getElementById("contact-subject").value,
+              message: document.getElementById("contact-message").value,
+            }),
+          });
+
+          const data = await response.json();
+          document.getElementById(
+            "contact-response"
+          ).textContent = `Contact Response: ${
+            response.status
+          }\n${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          document.getElementById(
+            "contact-response"
+          ).textContent = `Error: ${error.message}`;
+        }
+      }
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("🌐 API Gateway Test Console loaded");
+        console.log("Gateway URL:", GATEWAY_URL);
+
+        // Auto-check gateway health on load
+        setTimeout(checkGatewayHealth, 1000);
+      });
+    </script>
+  </body>
+</html>

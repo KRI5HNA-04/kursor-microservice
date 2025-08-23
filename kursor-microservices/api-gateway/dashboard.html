@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kursor Microservices Dashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: white;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .header h1 {
+        font-size: 3em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .header p {
+        font-size: 1.2em;
+        opacity: 0.9;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-value {
+        font-size: 2.5em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .stat-label {
+        font-size: 1.1em;
+        opacity: 0.8;
+      }
+
+      .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      .service-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 25px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .service-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+      }
+
+      .service-name {
+        font-size: 1.4em;
+        font-weight: bold;
+      }
+
+      .status-indicator {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        margin-left: 10px;
+      }
+
+      .status-healthy {
+        background-color: #00ff88;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+      }
+
+      .status-unhealthy {
+        background-color: #ff4757;
+        box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+      }
+
+      .service-info {
+        font-size: 0.9em;
+        opacity: 0.8;
+        margin-bottom: 10px;
+      }
+
+      .service-url {
+        font-family: monospace;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.85em;
+      }
+
+      .refresh-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #00ff88, #00cc6a);
+        border: none;
+        padding: 12px 20px;
+        border-radius: 25px;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        transition: all 0.3s ease;
+      }
+
+      .refresh-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+      }
+
+      .last-updated {
+        text-align: center;
+        opacity: 0.7;
+        margin-top: 20px;
+      }
+
+      .loading {
+        text-align: center;
+        font-size: 1.2em;
+        margin: 40px 0;
+      }
+
+      .error {
+        background: rgba(255, 71, 87, 0.2);
+        border: 1px solid rgba(255, 71, 87, 0.5);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🌐 Kursor Microservices Dashboard</h1>
+        <p>Real-time monitoring of all services</p>
+      </div>
+
+      <button class="refresh-btn" onclick="loadDashboard()">🔄 Refresh</button>
+
+      <div id="loading" class="loading">⏳ Loading dashboard data...</div>
+
+      <div id="error" class="error" style="display: none">
+        ❌ Failed to load dashboard data. Please check if the API Gateway is
+        running.
+      </div>
+
+      <div id="dashboard-content" style="display: none">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="total-services">-</div>
+            <div class="stat-label">Total Services</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="healthy-services">-</div>
+            <div class="stat-label">Healthy Services</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="gateway-uptime">-</div>
+            <div class="stat-label">Gateway Uptime</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="gateway-status">-</div>
+            <div class="stat-label">Gateway Status</div>
+          </div>
+        </div>
+
+        <div class="services-grid" id="services-grid">
+          <!-- Services will be loaded here -->
+        </div>
+
+        <div class="last-updated" id="last-updated">
+          <!-- Last updated time will be shown here -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_GATEWAY_URL = "http://localhost:3000";
+
+      async function loadDashboard() {
+        const loadingEl = document.getElementById("loading");
+        const errorEl = document.getElementById("error");
+        const contentEl = document.getElementById("dashboard-content");
+
+        loadingEl.style.display = "block";
+        errorEl.style.display = "none";
+        contentEl.style.display = "none";
+
+        try {
+          const response = await fetch(`${API_GATEWAY_URL}/dashboard`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          renderDashboard(data);
+
+          loadingEl.style.display = "none";
+          contentEl.style.display = "block";
+        } catch (error) {
+          console.error("Dashboard error:", error);
+          loadingEl.style.display = "none";
+          errorEl.style.display = "block";
+          errorEl.innerHTML = `❌ Error: ${error.message}`;
+        }
+      }
+
+      function renderDashboard(data) {
+        // Update stats
+        document.getElementById("total-services").textContent =
+          data.summary?.totalServices || "4";
+        document.getElementById("healthy-services").textContent =
+          data.summary?.healthyServices || "0";
+        document.getElementById("gateway-uptime").textContent = formatUptime(
+          data.gateway?.uptime || 0
+        );
+        document.getElementById("gateway-status").textContent =
+          data.gateway?.status || "Unknown";
+
+        // Render services
+        const servicesGrid = document.getElementById("services-grid");
+        servicesGrid.innerHTML = "";
+
+        if (data.services) {
+          Object.entries(data.services).forEach(
+            ([serviceName, serviceData]) => {
+              const serviceCard = createServiceCard(serviceName, serviceData);
+              servicesGrid.appendChild(serviceCard);
+            }
+          );
+        }
+
+        // Update last updated time
+        document.getElementById(
+          "last-updated"
+        ).textContent = `Last updated: ${new Date().toLocaleString()}`;
+      }
+
+      function createServiceCard(name, data) {
+        const card = document.createElement("div");
+        card.className = "service-card";
+
+        const isHealthy =
+          data.health?.status === "healthy" || data.health?.status === "up";
+        const statusClass = isHealthy ? "status-healthy" : "status-unhealthy";
+
+        card.innerHTML = `
+                <div class="service-header">
+                    <div class="service-name">${capitalizeFirst(
+                      name
+                    )} Service</div>
+                    <div class="status-indicator ${statusClass}"></div>
+                </div>
+                <div class="service-info">
+                    <strong>Status:</strong> ${data.health?.status || "Unknown"}
+                </div>
+                <div class="service-info">
+                    <strong>Port:</strong> ${extractPort(data.url)}
+                </div>
+                <div class="service-info">
+                    <strong>Description:</strong> ${getServiceDescription(name)}
+                </div>
+                <div class="service-url">${data.url}</div>
+            `;
+
+        return card;
+      }
+
+      function capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+
+      function extractPort(url) {
+        try {
+          return new URL(url).port || "80";
+        } catch {
+          return "N/A";
+        }
+      }
+
+      function getServiceDescription(name) {
+        const descriptions = {
+          execution: "Code execution with Judge0 API",
+          communication: "Email and notification service",
+          snippet: "Code snippet management",
+          user: "User authentication and profiles",
+        };
+        return descriptions[name] || "Microservice";
+      }
+
+      function formatUptime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        if (hours > 0) {
+          return `${hours}h ${minutes}m`;
+        } else if (minutes > 0) {
+          return `${minutes}m ${secs}s`;
+        } else {
+          return `${secs}s`;
+        }
+      }
+
+      // Auto-refresh every 30 seconds
+      setInterval(loadDashboard, 30000);
+
+      // Load dashboard on page load
+      document.addEventListener("DOMContentLoaded", loadDashboard);
+    </script>
+  </body>
+</html>

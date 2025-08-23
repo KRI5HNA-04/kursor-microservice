@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snippet Service Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .result {
+        background: #f5f5f5;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 3px;
+        font-family: monospace;
+      }
+      button {
+        padding: 10px 15px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      .success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 Snippet Service Test Dashboard</h1>
+
+      <div class="test-section">
+        <h3>Service Status</h3>
+        <button onclick="testHealth()">Check Health</button>
+        <button onclick="testInfo()">Get Service Info</button>
+        <div id="health-result" class="result"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>Snippet Operations</h3>
+        <button onclick="getSnippets()">Get Snippets</button>
+        <button onclick="createTestSnippet()">Create Test Snippet</button>
+        <button onclick="getStats()">Get Statistics</button>
+        <div id="snippets-result" class="result"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>Current Test User ID</h3>
+        <input
+          type="text"
+          id="userId"
+          value="test-user-123"
+          style="width: 200px"
+        />
+        <button onclick="updateUserId()">Update User ID</button>
+      </div>
+    </div>
+
+    <script>
+      const BASE_URL = "http://localhost:3003";
+      let currentUserId = "test-user-123";
+
+      function updateUserId() {
+        currentUserId = document.getElementById("userId").value;
+        displayResult(
+          "health-result",
+          `Updated user ID to: ${currentUserId}`,
+          "success"
+        );
+      }
+
+      function displayResult(elementId, data, type = "success") {
+        const element = document.getElementById(elementId);
+        element.textContent =
+          typeof data === "object" ? JSON.stringify(data, null, 2) : data;
+        element.className = `result ${type}`;
+      }
+
+      async function testHealth() {
+        try {
+          const response = await fetch(`${BASE_URL}/health`);
+          const data = await response.json();
+          displayResult("health-result", data, "success");
+        } catch (error) {
+          displayResult("health-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function testInfo() {
+        try {
+          const response = await fetch(`${BASE_URL}/info`);
+          const data = await response.json();
+          displayResult("health-result", data, "success");
+        } catch (error) {
+          displayResult("health-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function getSnippets() {
+        try {
+          const response = await fetch(`${BASE_URL}/snippets`, {
+            headers: {
+              Authorization: `Bearer ${currentUserId}`,
+            },
+          });
+          const data = await response.json();
+          displayResult(
+            "snippets-result",
+            data,
+            response.ok ? "success" : "error"
+          );
+        } catch (error) {
+          displayResult("snippets-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function createTestSnippet() {
+        try {
+          const response = await fetch(`${BASE_URL}/snippets`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${currentUserId}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              title: `Test Snippet ${Date.now()}`,
+              code: 'console.log("Hello from microservice test!");',
+              language: "javascript",
+            }),
+          });
+          const data = await response.json();
+          displayResult(
+            "snippets-result",
+            data,
+            response.ok ? "success" : "error"
+          );
+        } catch (error) {
+          displayResult("snippets-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function getStats() {
+        try {
+          const response = await fetch(`${BASE_URL}/stats`, {
+            headers: {
+              Authorization: `Bearer ${currentUserId}`,
+            },
+          });
+          const data = await response.json();
+          displayResult(
+            "snippets-result",
+            data,
+            response.ok ? "success" : "error"
+          );
+        } catch (error) {
+          displayResult("snippets-result", `Error: ${error.message}`, "error");
+        }
+      }
+
+      // Test health on page load
+      testHealth();
+    </script>
+  </body>
+</html>

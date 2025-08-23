@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: kursor-postgres
+    environment:
+      POSTGRES_DB: kursor
+      POSTGRES_USER: kursor_user
+      POSTGRES_PASSWORD: kursor_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kursor-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kursor_user -d kursor"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Execution Service
+  execution-service:
+    build:
+      context: ./services/execution-service
+      dockerfile: Dockerfile
+    container_name: kursor-execution
+    environment:
+      - PORT=3001
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+      - RAPIDAPI_HOST=judge0-ce.p.rapidapi.com
+      - CORS_ORIGIN=http://localhost:3000
+    ports:
+      - "3001:3001"
+    networks:
+      - kursor-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Communication Service
+  communication-service:
+    build:
+      context: ./services/communication-service
+      dockerfile: Dockerfile
+    container_name: kursor-communication
+    environment:
+      - PORT=3002
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+    ports:
+      - "3002:3002"
+    networks:
+      - kursor-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Snippet Service
+  snippet-service:
+    build:
+      context: ./services/snippet-service
+      dockerfile: Dockerfile
+    container_name: kursor-snippets
+    environment:
+      - PORT=3003
+      - DATABASE_URL=postgresql://kursor_user:kursor_password@postgres:5432/kursor
+    ports:
+      - "3003:3003"
+    networks:
+      - kursor-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: kursor-users
+    environment:
+      - PORT=3004
+      - DATABASE_URL=postgresql://kursor_user:kursor_password@postgres:5432/kursor
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "3004:3004"
+    networks:
+      - kursor-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: kursor-gateway
+    environment:
+      - PORT=3000
+      - EXECUTION_SERVICE_URL=http://execution-service:3001
+      - COMMUNICATION_SERVICE_URL=http://communication-service:3002
+      - SNIPPET_SERVICE_URL=http://snippet-service:3003
+      - USER_SERVICE_URL=http://user-service:3004
+      - GATEWAY_SECRET=${GATEWAY_SECRET}
+    ports:
+      - "3000:3000"
+    networks:
+      - kursor-network
+    depends_on:
+      - execution-service
+      - communication-service
+      - snippet-service
+      - user-service
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  kursor-network:
+    driver: bridge
