@@ -13,6 +13,16 @@ const languageMap: Record<string, number> = {
   python: 71,
   cpp: 54,
   java: 62, // Judge0: Java (OpenJDK)
+  typescript: 74, // TypeScript
+  csharp: 51, // C#
+  php: 68, // PHP
+  ruby: 72, // Ruby
+  go: 60, // Go
+  rust: 73, // Rust
+  kotlin: 78, // Kotlin
+  swift: 83, // Swift
+  dart: 90, // Dart
+  scala: 81, // Scala
 };
 
 const codeTemplates: Record<string, string> = {
@@ -35,6 +45,145 @@ public class Main {
         System.out.println("Hello World" + (line.isEmpty() ? "" : ", " + line));
         sc.close();
     }
+}`,
+  typescript: `console.log("Hello World");
+
+// TypeScript example with types
+interface Greeting {
+    message: string;
+    name?: string;
+}
+
+const greeting: Greeting = {
+    message: "Hello World"
+};
+
+console.log(greeting.message);`,
+  csharp: `using System;
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Hello World");
+        
+        // Example with input
+        Console.Write("Enter your name: ");
+        string name = Console.ReadLine();
+        if (!string.IsNullOrEmpty(name))
+        {
+            Console.WriteLine($"Hello, {name}!");
+        }
+    }
+}`,
+  php: `<?php
+echo "Hello World\\n";
+
+// Example with variables
+$name = "World";
+echo "Hello, " . $name . "!\\n";
+
+// Example with function
+function greet($name = "World") {
+    return "Hello, " . $name . "!";
+}
+
+echo greet();
+?>`,
+  ruby: `puts "Hello World"
+
+# Example with variables
+name = "World"
+puts "Hello, #{name}!"
+
+# Example with method
+def greet(name = "World")
+  "Hello, #{name}!"
+end
+
+puts greet`,
+  go: `package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello World")
+    
+    // Example with variables
+    name := "World"
+    fmt.Printf("Hello, %s!\\n", name)
+}`,
+  rust: `fn main() {
+    println!("Hello World");
+    
+    // Example with variables
+    let name = "World";
+    println!("Hello, {}!", name);
+    
+    // Example with function
+    greet("Rust");
+}
+
+fn greet(name: &str) {
+    println!("Hello, {}!", name);
+}`,
+  kotlin: `fun main() {
+    println("Hello World")
+    
+    // Example with variables
+    val name = "World"
+    println("Hello, $name!")
+    
+    // Example with function
+    greet("Kotlin")
+}
+
+fun greet(name: String) {
+    println("Hello, $name!")
+}`,
+  swift: `import Foundation
+
+print("Hello World")
+
+// Example with variables
+let name = "World"
+print("Hello, \\(name)!")
+
+// Example with function
+func greet(_ name: String = "World") {
+    print("Hello, \\(name)!")
+}
+
+greet("Swift")`,
+  dart: `void main() {
+  print('Hello World');
+  
+  // Example with variables
+  String name = 'World';
+  print('Hello, $name!');
+  
+  // Example with function
+  greet('Dart');
+}
+
+void greet(String name) {
+  print('Hello, $name!');
+}`,
+  scala: `object Main {
+  def main(args: Array[String]): Unit = {
+    println("Hello World")
+    
+    // Example with variables
+    val name = "World"
+    println(s"Hello, $name!")
+    
+    // Example with function
+    greet("Scala")
+  }
+  
+  def greet(name: String): Unit = {
+    println(s"Hello, $name!")
+  }
 }`,
 };
 
@@ -352,6 +501,370 @@ export default function EditorWithRunner() {
         };
       },
     });
+
+    // TypeScript
+    monaco.languages.registerCompletionItemProvider("typescript", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "interface",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "interface ${1:Name} {\n    ${2:property}: ${3:type};\n}",
+              documentation: "interface",
+              range,
+            },
+            {
+              label: "type",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: "type ${1:Name} = ${2:type};",
+              documentation: "type alias",
+              range,
+            },
+            {
+              label: "asyncfn",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "async function ${1:name}(${2:args}): Promise<${3:void}> {\n    ${4}\n}",
+              documentation: "async function",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // C#
+    monaco.languages.registerCompletionItemProvider("csharp", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "main",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "class Program\n{\n    static void Main()\n    {\n        ${1:// code}\n    }\n}",
+              documentation: "main class",
+              range,
+            },
+            {
+              label: "cw",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: 'Console.WriteLine(${1:"Hello"});',
+              documentation: "Console.WriteLine",
+              range,
+            },
+            {
+              label: "fori",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "for (int i = 0; i < ${1:n}; i++)\n{\n    ${2:// code}\n}",
+              documentation: "for loop",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // PHP
+    monaco.languages.registerCompletionItemProvider("php", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "echo",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: 'echo ${1:"Hello World"};',
+              documentation: "echo",
+              range,
+            },
+            {
+              label: "function",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "function ${1:name}(${2:args}) {\n    ${3:// code}\n}",
+              documentation: "function",
+              range,
+            },
+            {
+              label: "foreach",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "foreach (${1:array} as ${2:item}) {\n    ${3:// code}\n}",
+              documentation: "foreach loop",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // Ruby
+    monaco.languages.registerCompletionItemProvider("ruby", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "puts",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: 'puts ${1:"Hello World"}',
+              documentation: "puts",
+              range,
+            },
+            {
+              label: "def",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: "def ${1:method_name}(${2:args})\n  ${3:# code}\nend",
+              documentation: "method",
+              range,
+            },
+            {
+              label: "each",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: "${1:array}.each do |${2:item}|\n  ${3:# code}\nend",
+              documentation: "each loop",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // Go
+    monaco.languages.registerCompletionItemProvider("go", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "main",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                'package main\n\nimport "fmt"\n\nfunc main() {\n    ${1:// code}\n}',
+              documentation: "main function",
+              range,
+            },
+            {
+              label: "fmt",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: 'fmt.Println(${1:"Hello World"})',
+              documentation: "fmt.Println",
+              range,
+            },
+            {
+              label: "func",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "func ${1:name}(${2:args}) ${3:returnType} {\n    ${4:// code}\n}",
+              documentation: "function",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // Rust
+    monaco.languages.registerCompletionItemProvider("rust", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "main",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: "fn main() {\n    ${1:// code}\n}",
+              documentation: "main function",
+              range,
+            },
+            {
+              label: "println",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: 'println!("${1:Hello World}");',
+              documentation: "println! macro",
+              range,
+            },
+            {
+              label: "fn",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "fn ${1:name}(${2:args}) -> ${3:ReturnType} {\n    ${4:// code}\n}",
+              documentation: "function",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // Kotlin
+    monaco.languages.registerCompletionItemProvider("kotlin", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "main",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: "fun main() {\n    ${1:// code}\n}",
+              documentation: "main function",
+              range,
+            },
+            {
+              label: "println",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: 'println(${1:"Hello World"})',
+              documentation: "println",
+              range,
+            },
+            {
+              label: "fun",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "fun ${1:name}(${2:args}): ${3:ReturnType} {\n    ${4:// code}\n}",
+              documentation: "function",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // Swift
+    monaco.languages.registerCompletionItemProvider("swift", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "print",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: 'print(${1:"Hello World"})',
+              documentation: "print",
+              range,
+            },
+            {
+              label: "func",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "func ${1:name}(${2:args}) -> ${3:ReturnType} {\n    ${4:// code}\n}",
+              documentation: "function",
+              range,
+            },
+            {
+              label: "fori",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: "for i in 0..<${1:n} {\n    ${2:// code}\n}",
+              documentation: "for loop",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // Dart
+    monaco.languages.registerCompletionItemProvider("dart", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "main",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: "void main() {\n  ${1:// code}\n}",
+              documentation: "main function",
+              range,
+            },
+            {
+              label: "print",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: "print('${1:Hello World}');",
+              documentation: "print",
+              range,
+            },
+            {
+              label: "function",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "${1:ReturnType} ${2:name}(${3:args}) {\n  ${4:// code}\n}",
+              documentation: "function",
+              range,
+            },
+          ],
+        };
+      },
+    });
+
+    // Scala
+    monaco.languages.registerCompletionItemProvider("scala", {
+      provideCompletionItems(model: any, position: any) {
+        const range = getRange(model, position);
+        return {
+          suggestions: [
+            {
+              label: "main",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "object Main {\n  def main(args: Array[String]): Unit = {\n    ${1:// code}\n  }\n}",
+              documentation: "main object",
+              range,
+            },
+            {
+              label: "println",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText: 'println(${1:"Hello World"})',
+              documentation: "println",
+              range,
+            },
+            {
+              label: "def",
+              kind: S.Snippet,
+              insertTextRules: R,
+              insertText:
+                "def ${1:name}(${2:args}): ${3:ReturnType} = {\n  ${4:// code}\n}",
+              documentation: "function",
+              range,
+            },
+          ],
+        };
+      },
+    });
   }
 
   // Modal close on outside click
@@ -639,9 +1152,19 @@ export default function EditorWithRunner() {
             className="bg-[#2c2c2e] border border-[#3c3c3e] px-3 py-1 rounded text-sm focus:outline-none focus:ring focus:ring-purple-500"
           >
             <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
             <option value="python">Python</option>
-            <option value="cpp">C++</option>
             <option value="java">Java</option>
+            <option value="csharp">C#</option>
+            <option value="cpp">C++</option>
+            <option value="go">Go</option>
+            <option value="rust">Rust</option>
+            <option value="php">PHP</option>
+            <option value="ruby">Ruby</option>
+            <option value="kotlin">Kotlin</option>
+            <option value="swift">Swift</option>
+            <option value="dart">Dart</option>
+            <option value="scala">Scala</option>
           </select>
           <div className="flex-1 flex justify-center">
             <Tooltip title={"Shortcut: Ctrl + '"} arrow placement="bottom">

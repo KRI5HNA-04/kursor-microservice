@@ -6,7 +6,7 @@ A powerful, web-based code editor built with Next.js 15 that supports multiple p
 
 ### 🎯 Core Features
 
-- **Multi-Language Support**: JavaScript, Python, C++, and Java
+- **Multi-Language Support**: JavaScript, TypeScript, Python, Java, C#, C++, Go, Rust, PHP, Ruby, Kotlin, Swift, Dart, and Scala
 - **Real-time Code Execution**: Run code directly in the browser using Judge0 API
 - **Monaco Editor Integration**: VS Code-like editing experience with syntax highlighting
 - **Code Templates**: Pre-built templates for quick start in each language
@@ -173,9 +173,19 @@ The application uses the following main models:
 ### Supported Languages
 
 - **JavaScript** (Node.js runtime)
+- **TypeScript** (TypeScript compiler)
 - **Python** (Python 3.x)
-- **C++** (GCC compiler)
 - **Java** (OpenJDK)
+- **C#** (.NET runtime)
+- **C++** (GCC compiler)
+- **Go** (Go compiler)
+- **Rust** (Rust compiler)
+- **PHP** (PHP interpreter)
+- **Ruby** (Ruby interpreter)
+- **Kotlin** (Kotlin compiler)
+- **Swift** (Swift compiler)
+- **Dart** (Dart VM)
+- **Scala** (Scala compiler)
 
 ### Environment Setup
 
