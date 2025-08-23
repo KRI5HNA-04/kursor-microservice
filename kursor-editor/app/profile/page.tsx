@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Navbar from "../Components/Navbar";
 import { AuroraBackground } from "../Components/ui/aurora-background";
+import { compressImage, validateImageFile } from "../libs/imageUtils";
 import {
   Camera,
   Save,
@@ -83,17 +84,48 @@ export default function ProfilePage() {
     }
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file first
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setError(validation.error || "Invalid file");
+      return;
+    }
+
+    // Clear previous errors and show loading
+    setError("");
     setLoading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setNewImage(reader.result as string);
-      setProfileData((prev) => ({ ...prev, image: reader.result as string }));
+
+    try {
+      // Compress the image
+      const compressedImage = await compressImage(file, 600, 0.8);
+
+      // Additional check for compressed image size
+      if (compressedImage.length > 6000000) {
+        // ~4.5MB in base64
+        setError(
+          "Image is still too large after compression. Please use a smaller image."
+        );
+        setLoading(false);
+        return;
+      }
+
+      setNewImage(compressedImage);
+      setProfileData((prev) => ({ ...prev, image: compressedImage }));
+      setMessage(
+        "Image compressed and selected successfully! Don't forget to save."
+      );
       setLoading(false);
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Image processing error:", error);
+      setError(
+        "Failed to process the image. Please try again with a different image."
+      );
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -214,12 +246,16 @@ export default function ProfilePage() {
                     />
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                       onChange={handleImageSelect}
                       className="hidden"
                       disabled={loading}
                     />
                   </label>
+                </div>
+                <div className="mt-3 text-xs text-gray-400 text-center">
+                  <p>Supported formats: JPEG, PNG, GIF, WebP</p>
+                  <p>Maximum size: 5MB</p>
                 </div>
               </div>
               <div className="space-y-4">
