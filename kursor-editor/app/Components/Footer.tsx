@@ -11,10 +11,10 @@ export default function Footer() {
         </div>
         {/* Quick Links */}
         <div className="flex gap-6 mb-4 md:mb-0">
-          {["Features", "Pricing", "About", "Contact"].map((link) => (
+          {["Editor", "Features", "About", "Contact"].map((link) => (
             <a
               key={link}
-              href={`#${link.toLowerCase()}`}
+              href={`${link.toLowerCase()}`}
               className="text-gray-300 hover:text-purple-400 transition text-sm"
             >
               {link}
