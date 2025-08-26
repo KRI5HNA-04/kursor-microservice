@@ -38,22 +38,43 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         // @ts-ignore
         token.uid = (user as any).id;
+        // Optimize image URLs to reduce token size
         // @ts-ignore
-        token.picture = (user as any).image || token.picture;
+        const userImage = (user as any).image || token.picture;
+        if (userImage && userImage.length > 200) {
+          // Use a shorter fallback avatar URL
+          token.picture = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            (user.name || "U").substring(0, 20) // Limit name length
+          )}&size=64&background=random`;
+        } else {
+          token.picture = userImage;
+        }
       }
+      
       // When the client calls useSession().update(data), NextAuth passes trigger==='update'
-      // and the partial session in 'session'. Use this to refresh token values like picture.
       if (trigger === "update" && session) {
         // @ts-ignore
-        if (session.name) token.name = session.name as string;
+        if (session.name) token.name = (session.name as string).substring(0, 50); // Limit name length
         // @ts-ignore
-        if (session.image) token.picture = session.image as string;
+        if (session.image) {
+          const newImage = session.image as string;
+          if (newImage.length > 200) {
+            token.picture = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              (token.name || "U").substring(0, 20)
+            )}&size=64&background=random`;
+          } else {
+            token.picture = newImage;
+          }
+        }
       }
-      if (account?.provider === "google" && token.picture && token.picture.length > 500) {
-        token.picture = `https://ui-avatars.com/api/?format=png&name=${encodeURIComponent(
-          token.name || "User"
-        )}`;
+      
+      // Additional optimization for Google OAuth
+      if (account?.provider === "google" && token.picture && token.picture.length > 200) {
+        token.picture = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          (token.name || "U").substring(0, 20)
+        )}&size=64&background=random`;
       }
+      
       return token;
     },
     async session({ session, token }) {
@@ -106,8 +127,39 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60,
-    updateAge: 24 * 60 * 60,
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+    updateAge: 24 * 60 * 60, // 1 day
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60, // 7 days
+      }
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 15 * 60, // 15 minutes
+      }
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60, // 24 hours
+      }
+    }
   },
   pages: { signIn: "/login", error: "/login" },
   // Enable verbose logs when NEXTAUTH_DEBUG=true (useful on Vercel)

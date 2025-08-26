@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import SessionProviderWrapper from "./Components/SessionProviderWrapper";
+import HeaderSizeMonitor from "./Components/HeaderSizeMonitor";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <HeaderSizeMonitor />
         <SessionProviderWrapper>{children}</SessionProviderWrapper>
         <Analytics />
         <SpeedInsights />
