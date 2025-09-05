@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../lib/auth"; // central auth options
 import { prisma } from "../../../lib/prisma"; // shared client
+import { saveImageToDisk } from "../../../lib/imageStorage";
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,7 +41,9 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { name, image, mobile, bio, githubUrl, linkedinUrl } = body;
     
-    // Validate image if provided
+    let finalImageUrl = null;
+    
+    // Handle image if provided
     if (image) {
       // Check if it's a valid data URL
       if (!image.startsWith('data:image/')) {
@@ -50,10 +53,10 @@ export async function PUT(request: NextRequest) {
       }
       
       // Check image size (base64 encoded)
-      const maxBase64Size = 7000000; // ~5MB in base64
+      const maxBase64Size = 300000; // ~225KB in base64 (much smaller than before)
       if (image.length > maxBase64Size) {
         return NextResponse.json({ 
-          error: "Image too large. Maximum size is 5MB." 
+          error: "Image too large. Please compress the image further." 
         }, { status: 400 });
       }
       
@@ -65,6 +68,26 @@ export async function PUT(request: NextRequest) {
           error: "Invalid image type. Only JPEG, PNG, GIF, and WebP are allowed." 
         }, { status: 400 });
       }
+
+      // Get user ID for image storage
+      const currentUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true }
+      });
+
+      if (!currentUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // Save image to disk instead of database
+      const imageResult = await saveImageToDisk(image, currentUser.id);
+      if (!imageResult.success) {
+        return NextResponse.json({ 
+          error: imageResult.error || "Failed to save image" 
+        }, { status: 400 });
+      }
+
+      finalImageUrl = imageResult.url;
     }
     
     // Validate other fields
@@ -86,16 +109,22 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
     
+    // Prepare update data - only include image if we have a new one
+    const updateData: any = {
+      name,
+      mobile,
+      bio,
+      githubUrl,
+      linkedinUrl,
+    };
+
+    if (finalImageUrl) {
+      updateData.image = finalImageUrl;
+    }
+    
     const updated = await prisma.user.update({
       where: { email: session.user.email },
-      data: {
-        name,
-        image,
-        mobile,
-        bio,
-        githubUrl,
-        linkedinUrl,
-      },
+      data: updateData,
       select: {
         name: true,
         email: true,

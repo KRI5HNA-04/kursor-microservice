@@ -38,41 +38,17 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         // @ts-ignore
         token.uid = (user as any).id;
-        // Optimize image URLs to reduce token size
-        // @ts-ignore
-        const userImage = (user as any).image || token.picture;
-        if (userImage && userImage.length > 200) {
-          // Use a shorter fallback avatar URL
-          token.picture = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            (user.name || "U").substring(0, 20) // Limit name length
-          )}&size=64&background=random`;
-        } else {
-          token.picture = userImage;
-        }
+        // NEVER store image data in JWT to avoid large tokens
+        // Images will be fetched separately via API
+        token.picture = null;
       }
       
       // When the client calls useSession().update(data), NextAuth passes trigger==='update'
       if (trigger === "update" && session) {
         // @ts-ignore
         if (session.name) token.name = (session.name as string).substring(0, 50); // Limit name length
-        // @ts-ignore
-        if (session.image) {
-          const newImage = session.image as string;
-          if (newImage.length > 200) {
-            token.picture = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              (token.name || "U").substring(0, 20)
-            )}&size=64&background=random`;
-          } else {
-            token.picture = newImage;
-          }
-        }
-      }
-      
-      // Additional optimization for Google OAuth
-      if (account?.provider === "google" && token.picture && token.picture.length > 200) {
-        token.picture = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          (token.name || "U").substring(0, 20)
-        )}&size=64&background=random`;
+        // Don't store image in token - will be fetched from API
+        token.picture = null;
       }
       
       return token;
@@ -84,7 +60,7 @@ export const authOptions: NextAuthOptions = {
           id: (token as any).uid as string | undefined,
           name: (token.name as string) || null,
           email: (token.email as string) || null,
-          image: (token.picture as string) || null,
+          image: null, // Images will be fetched separately to avoid large sessions
         } as any;
       }
       return session;
@@ -115,13 +91,8 @@ export const authOptions: NextAuthOptions = {
         if (!user || !user.password) return null;
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) return null;
-        let image = user.image;
-        if (image && image.length > 300) {
-          image =
-            "https://ui-avatars.com/api/?format=png&name=" +
-            encodeURIComponent(user.name || "User");
-        }
-        return { id: user.id, name: user.name, email: user.email, image } as any;
+        // Don't include image in auth response to keep tokens small
+        return { id: user.id, name: user.name, email: user.email, image: null } as any;
       },
     }),
   ],

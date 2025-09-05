@@ -1,5 +1,5 @@
 // Utility function to compress images on the client side
-export const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.8): Promise<string> => {
+export const compressImage = (file: File, maxWidth: number = 400, quality: number = 0.7): Promise<string> => {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -9,26 +9,30 @@ export const compressImage = (file: File, maxWidth: number = 800, quality: numbe
       // Calculate new dimensions while maintaining aspect ratio
       let { width, height } = img;
       
-      if (width > height) {
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-      } else {
-        if (height > maxWidth) {
-          width = (width * maxWidth) / height;
-          height = maxWidth;
-        }
+      // For profile pictures, we want square images
+      const targetSize = Math.min(maxWidth, Math.min(width, height));
+      
+      // Calculate crop dimensions for center square crop
+      const cropSize = Math.min(width, height);
+      const cropX = (width - cropSize) / 2;
+      const cropY = (height - cropSize) / 2;
+      
+      canvas.width = targetSize;
+      canvas.height = targetSize;
+      
+      // Draw cropped and resized image
+      ctx?.drawImage(img, cropX, cropY, cropSize, cropSize, 0, 0, targetSize, targetSize);
+      
+      // Try different quality levels to ensure small file size
+      let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+      
+      // If still too large, reduce quality further
+      let currentQuality = quality;
+      while (compressedDataUrl.length > 200000 && currentQuality > 0.3) { // ~150KB base64 limit
+        currentQuality -= 0.1;
+        compressedDataUrl = canvas.toDataURL('image/jpeg', currentQuality);
       }
       
-      canvas.width = width;
-      canvas.height = height;
-      
-      // Draw and compress
-      ctx?.drawImage(img, 0, 0, width, height);
-      
-      // Convert to base64 with compression
-      const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
       resolve(compressedDataUrl);
     };
     
@@ -44,7 +48,7 @@ export const compressImage = (file: File, maxWidth: number = 800, quality: numbe
 
 // Utility to validate file before processing
 export const validateImageFile = (file: File): { valid: boolean; error?: string } => {
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 2 * 1024 * 1024; // 2MB - reduced from 5MB
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   
   if (!allowedTypes.includes(file.type)) {
@@ -57,7 +61,7 @@ export const validateImageFile = (file: File): { valid: boolean; error?: string 
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: "Image size must be less than 5MB. Please choose a smaller image."
+      error: "Image size must be less than 2MB. Please choose a smaller image."
     };
   }
   

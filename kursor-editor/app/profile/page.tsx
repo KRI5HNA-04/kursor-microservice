@@ -100,14 +100,13 @@ export default function ProfilePage() {
     setLoading(true);
 
     try {
-      // Compress the image
-      const compressedImage = await compressImage(file, 600, 0.8);
+      // Compress the image with more aggressive settings
+      const compressedImage = await compressImage(file, 300, 0.6);
 
-      // Additional check for compressed image size
-      if (compressedImage.length > 6000000) {
-        // ~4.5MB in base64
+      // Check compressed image size - must be under 200KB base64
+      if (compressedImage.length > 200000) {
         setError(
-          "Image is still too large after compression. Please use a smaller image."
+          "Image is still too large after compression. Please use a smaller image or try a different format."
         );
         setLoading(false);
         return;
@@ -145,11 +144,10 @@ export default function ProfilePage() {
       }
       setMessage("Profile updated successfully!");
       setNewImage(null);
+      // Update session name only - no need to pass image as it's fetched separately
       if (typeof update === "function") {
-        // Pass changes so NextAuth can propagate into the JWT via trigger==='update'
         await update({
           name: profileData.name,
-          image: profileData.image || null,
         } as any);
       }
     } catch (e) {

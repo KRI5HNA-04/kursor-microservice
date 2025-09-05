@@ -5,20 +5,22 @@ export function middleware(request: NextRequest) {
   // Check if the request has large headers
   const headerSize = calculateHeaderSize(request);
   
-  // If headers are too large, redirect to a cleanup page or handle gracefully
+  // Vercel limits: individual headers 16KB, total headers 32KB
+  // We'll be more conservative and act at 8KB
   if (headerSize > 8192) { // 8KB threshold
-    console.warn(`Large headers detected: ${headerSize} bytes`);
+    console.warn(`Large headers detected: ${headerSize} bytes on ${request.nextUrl.pathname}`);
     
     // Create a response that clears problematic cookies
-    const response = NextResponse.next();
+    const response = NextResponse.redirect(new URL('/login?error=session_too_large', request.url));
     
-    // Clear potentially large cookies
+    // Clear ALL next-auth cookies to prevent header size issues
     const cookiesToClear = [
       'next-auth.session-token',
-      'next-auth.callback-url',
+      'next-auth.callback-url', 
       'next-auth.csrf-token',
       '__Secure-next-auth.session-token',
-      '__Host-next-auth.csrf-token'
+      '__Host-next-auth.csrf-token',
+      'next-auth.pkce.code_verifier'
     ];
     
     cookiesToClear.forEach(cookieName => {
@@ -31,12 +33,6 @@ export function middleware(request: NextRequest) {
       });
     });
     
-    // Redirect to login if session cookies are cleared
-    if (request.nextUrl.pathname.startsWith('/editor') || 
-        request.nextUrl.pathname.startsWith('/profile')) {
-      return NextResponse.redirect(new URL('/login?error=session_cleared', request.url));
-    }
-    
     return response;
   }
   
@@ -46,18 +42,16 @@ export function middleware(request: NextRequest) {
 function calculateHeaderSize(request: NextRequest): number {
   let totalSize = 0;
   
-  // Calculate cookie header size
-  const cookieHeader = request.headers.get('cookie');
-  if (cookieHeader) {
-    totalSize += cookieHeader.length;
-  }
-  
-  // Add other significant headers
+  // Calculate all header sizes
   request.headers.forEach((value, key) => {
-    if (key !== 'cookie') {
-      totalSize += key.length + value.length + 4; // +4 for ": " and "\r\n"
-    }
+    totalSize += key.length + value.length + 4; // +4 for ": " and "\r\n"
   });
+  
+  // Special attention to cookie header which is often the largest
+  const cookieHeader = request.headers.get('cookie');
+  if (cookieHeader && cookieHeader.length > 4096) { // 4KB cookie warning
+    console.warn(`Large cookie header detected: ${cookieHeader.length} bytes`);
+  }
   
   return totalSize;
 }
@@ -70,7 +64,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - uploads (our uploaded images)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|uploads).*)',
   ],
 };
