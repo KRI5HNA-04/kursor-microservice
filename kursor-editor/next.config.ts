@@ -13,20 +13,7 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
-  // Add headers configuration to handle large headers
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Request-Header-Size-Limit',
-            value: '16384', // 16KB limit
-          },
-        ],
-      },
-    ];
-  },
+  // Removed headers configuration that was causing Vercel routing conflicts
   webpack: (config) => {
     // Avoid traversing Windows user profile special folder that throws EPERM in this environment.
     config.snapshot = config.snapshot || {};
