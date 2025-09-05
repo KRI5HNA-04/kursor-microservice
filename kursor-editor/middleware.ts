@@ -2,15 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Temporarily simplified middleware to avoid deployment issues
-  // Just pass through all requests for now
+  // Temporarily disabled middleware to fix 404 issues
   return NextResponse.next();
 }
 
+// Disable matcher completely for now
 export const config = {
-  matcher: [
-    // Only match specific paths that really need middleware
-    '/editor/:path*',
-    '/profile/:path*'
-  ],
+  matcher: []
 };
