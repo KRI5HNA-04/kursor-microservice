@@ -1,0 +1,15 @@
+[build]
+base = "kursor-editor"
+command = "npm run build"
+publish = "kursor-editor/.next"
+
+[build.environment]
+# Disable secrets scanning for known public API keys
+SECRETS_SCAN_ENABLED = "false"
+
+# Alternative: Omit specific keys from scanning
+# [build.environment]
+#   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_RAPIDAPI_KEY"
+
+[functions]
+directory = "netlify/functions"

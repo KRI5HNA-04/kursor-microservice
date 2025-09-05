@@ -890,27 +890,22 @@ export default function EditorWithRunner() {
     setIsRunning(true);
     setOutput("Running...");
     try {
-      const response = await fetch(
-        "https://judge0-ce.p.rapidapi.com/submissions",
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY!,
-            "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
-          },
-          body: JSON.stringify({
-            language_id: languageMap[language],
-            source_code: code,
-            stdin: input,
-            encode: true,
-          }),
-        }
-      );
+      const response = await fetch("/api/execute", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          language_id: languageMap[language],
+          source_code: code,
+          stdin: input,
+          encode: true,
+        }),
+      });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        setOutput(`Error: ${response.status} - ${errorText}`);
+        const errorData = await response.json();
+        setOutput(`Error: ${response.status} - ${errorData.error}`);
         setIsRunning(false);
         return;
       }
@@ -918,16 +913,14 @@ export default function EditorWithRunner() {
       const { token } = await response.json();
 
       const checkResult = async () => {
-        const result = await fetch(
-          `https://judge0-ce.p.rapidapi.com/submissions/${token}?base64_encoded=true`,
-          {
-            method: "GET",
-            headers: {
-              "X-RapidAPI-Key": process.env.NEXT_PUBLIC_RAPIDAPI_KEY!,
-              "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com",
-            },
-          }
-        );
+        const result = await fetch(`/api/execute/${token}`);
+
+        if (!result.ok) {
+          const errorData = await result.json();
+          setOutput(`Error: ${result.status} - ${errorData.error}`);
+          setIsRunning(false);
+          return;
+        }
 
         const data = await result.json();
 
