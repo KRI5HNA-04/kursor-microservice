@@ -10,21 +10,6 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "ui-avatars.com" },
     ],
   },
-  experimental: {
-    optimizePackageImports: ["lucide-react"],
-  },
-  // Removed headers configuration that was causing Vercel routing conflicts
-  webpack: (config) => {
-    // Avoid traversing Windows user profile special folder that throws EPERM in this environment.
-    config.snapshot = config.snapshot || {};
-    // Add an IgnorePlugin as a safeguard (pattern unlikely to match project files)
-    config.plugins.push(
-      new (require('webpack')).IgnorePlugin({
-        resourceRegExp: /C:\\Users\\king1\\Application Data/i,
-      })
-    );
-    return config;
-  },
 };
 
 export default nextConfig;
