@@ -1,10 +1,4 @@
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
 import crypto from 'crypto';
-
-// Store images in public/uploads directory
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'avatars');
 
 export interface ImageUploadResult {
   success: boolean;
@@ -12,42 +6,30 @@ export interface ImageUploadResult {
   error?: string;
 }
 
+// For Vercel deployment, we'll store optimized images in database
+// but with much smaller sizes to avoid header issues
 export async function saveImageToDisk(base64Data: string, userId: string): Promise<ImageUploadResult> {
   try {
-    // Ensure upload directory exists
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true });
-    }
-
     // Parse base64 data
     const matches = base64Data.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
     if (!matches) {
       return { success: false, error: 'Invalid image format' };
     }
 
-    const fileExtension = matches[1] === 'jpeg' ? 'jpg' : matches[1];
     const imageBuffer = Buffer.from(matches[2], 'base64');
 
-    // Check file size (should be under 1MB for optimized images)
-    if (imageBuffer.length > 1024 * 1024) {
+    // Check file size (should be under 200KB for optimized images)
+    if (imageBuffer.length > 200 * 1024) {
       return { success: false, error: 'Image too large after compression' };
     }
 
-    // Generate filename with hash to prevent conflicts
-    const hash = crypto.createHash('md5').update(imageBuffer).digest('hex');
-    const filename = `${userId}_${hash}.${fileExtension}`;
-    const filepath = path.join(UPLOAD_DIR, filename);
-
-    // Save file
-    await writeFile(filepath, imageBuffer);
-
-    // Return public URL
-    const publicUrl = `/uploads/avatars/${filename}`;
-    return { success: true, url: publicUrl };
+    // For Vercel, we'll return the base64 data but heavily compressed
+    // This is safer than trying to write files on serverless
+    return { success: true, url: base64Data };
 
   } catch (error) {
-    console.error('Error saving image:', error);
-    return { success: false, error: 'Failed to save image' };
+    console.error('Error processing image:', error);
+    return { success: false, error: 'Failed to process image' };
   }
 }
 

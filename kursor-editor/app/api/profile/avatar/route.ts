@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
 import { generateAvatarUrl } from "../../../../lib/imageStorage";
-import { readFile } from "fs/promises";
-import path from "path";
 
 export const runtime = "nodejs";
 
@@ -51,22 +49,7 @@ export async function GET(request: NextRequest) {
       return res || new NextResponse("", { status: 204 });
     }
 
-    // Handle file path (new format)
-    if (img.startsWith('/uploads/avatars/')) {
-      try {
-        const filePath = path.join(process.cwd(), 'public', img);
-        const buffer = await readFile(filePath);
-        const contentType = img.endsWith('.jpg') || img.endsWith('.jpeg') ? 'image/jpeg' : 'image/png';
-        return serveBuffer(buffer, contentType);
-      } catch (error) {
-        console.error('Error reading avatar file:', error);
-        // Fallback to generated avatar
-        const res = await fetchAndStream(fallback);
-        return res || new NextResponse("", { status: 204 });
-      }
-    }
-
-    // Handle legacy base64 format (for existing users)
+    // Handle base64 format (our current approach for Vercel)
     if (img.startsWith("data:image")) {
       const match = img.match(/^data:(.*?);base64,(.*)$/);
       if (!match) {

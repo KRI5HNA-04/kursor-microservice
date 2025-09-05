@@ -79,11 +79,11 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      // Save image to disk instead of database
+      // Save image (now just validates and stores compressed base64)
       const imageResult = await saveImageToDisk(image, currentUser.id);
       if (!imageResult.success) {
         return NextResponse.json({ 
-          error: imageResult.error || "Failed to save image" 
+          error: imageResult.error || "Failed to process image" 
         }, { status: 400 });
       }
 
